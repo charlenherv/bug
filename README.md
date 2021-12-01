@@ -6,7 +6,7 @@ Vue.JS
 VueX
 SCSS
 Node
-CockroachDB for Leaderboard
+CockroachDB
 
 Navigate to server folder and run **npm start**
 
