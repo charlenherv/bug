@@ -1,0 +1,29 @@
+{
+  "name": "bug",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "dependencies": {
+    "axios": "^0.24.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "pg": "^8.7.1",
+    "pg-connection-string": "^2.5.0",
+    "prompt": "^1.2.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.5.15",
+    "@vue/cli-plugin-eslint": "~4.5.15",
+    "@vue/cli-plugin-vuex": "~4.5.15",
+    "@vue/cli-service": "~4.5.15",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^8.1.0",
+    "eslint-plugin-vue": "^8.0.3",
+    "node-sass": "^6.0.1",
+    "sass-loader": "^12.3.0",
+    "vue-template-compiler": "^2.6.14"
+  }
+}
