@@ -1,0 +1,20 @@
+@font-face {
+    font-family: 'MAG-Font';
+    src: url('MAG-Font.woff2') format('woff2'),
+        url('MAG-Font.woff') format('woff'),
+        url('MAG-Font.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'MAG-Font';
+    src: url('MAG-Font_1.woff2') format('woff2'),
+        url('MAG-Font_1.woff') format('woff'),
+        url('MAG-Font_1.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
