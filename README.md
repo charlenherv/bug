@@ -2,11 +2,11 @@
 
 *Interactive Audio Driven Space Shooter*
 
-Vue.JS
-VueX
-SCSS
-Node
-CockroachDB
+Vue.JS,
+VueX,
+SCSS,
+Node,
+CockroachDB,
 
 Navigate to server folder and run **npm start**
 
