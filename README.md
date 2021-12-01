@@ -1,14 +1,14 @@
 # Beats + UFOs + Gunship = Game
 
-*Interactive Audio Driven Space Shooter for GitHub & Lee Reilly Game Off*
+## *Interactive Audio Driven Space Shooter for GitHub & Lee Reilly Game Off*
 
 
-Vue.JS,
-VueX,
-Phaser (Game Engine),
-SCSS,
-Node,
-CockroachDB (For storing game scores and more theme (BUG) compliance) and it currently has a. . . bug which needs to be fixed. . imagine that :/
+Vue.JS<br>
+VueX<br>
+Phaser (Game Engine)<br>
+SCSS<br>
+Node<br>
+**Cockroach**DB (For storing game scores and further theme (**BUG**) compliance) and it currently has a. . . bug which will be fixed soon. . imagine that :/
 
 Navigate to server folder and run **npm start**
 
