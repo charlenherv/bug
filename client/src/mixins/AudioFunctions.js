@@ -59,8 +59,8 @@ export const AudioFunctions = {
                     if (nextIndex === componentContext.levels.length) {
                         componentContext.endGame();
                     } else {
-                        componentContext.currentLevel = componentContext.levels[nextIndex];
-                        data.methodsReference.playBeat(componentContext);
+                        componentContext.currentLevel = componentContext.levels[nextIndex]; // Set next level
+                        componentContext.startLevel(); // Start level
                     }
                 },
                 onpause: function () {

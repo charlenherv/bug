@@ -1,1 +1,0 @@
-curl --create-dirs -o $HOME/.postgresql/root.crt -O https://cockroachlabs.cloud/clusters/42136543-3273-4bd3-94fa-6391419bd29a/cert

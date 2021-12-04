@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const fs = require("fs");
+
 const path = require('path');
 const client = __dirname + '/public';
 
@@ -8,163 +8,90 @@ const client = __dirname + '/public';
 app.use(express.static(path.join(client)));
 
 // Cockroach
+const async = require("async");
+const fs = require("fs");
 const parse = require("pg-connection-string").parse;
-const { Pool } = require("pg");
-const prompt = require("prompt");
+const pg = require("pg");
 const { v4: uuidv4 } = require("uuid");
 
-/*
-// Wrapper for a function.  This automatically re-calls the operation with
-// the client as an argument as long as the database server asks for
-// the function to be retried.
-async function retryTxn(n, max, client, operation, callback) {
-  await client.query("BEGIN;");
-  while (true) {
-      n++;
-      if (n === max) {
-          throw new Error("Max retry count reached.");
-      }
-      try {
-          await operation(client, callback);
-          await client.query("COMMIT;");
-          return;
-      } catch (err) {
-          if (err.code !== "40001") {
-              return callback(err);
-          } else {
-              console.log("Transaction failed. Retrying transaction.");
-              console.log(err.message);
-              await client.query("ROLLBACK;", () => {
-                  console.log("Rolling back transaction.");
-              });
-              await new Promise((r) => setTimeout(r, 2 ** n * 1000));
-          }
-      }
+// Connection to the database
+var connectData = require('./connect_data');
+let string = "postgresql://"+connectData.data.user+":"+connectData.data.pass+"@free-tier.gcp-us-central1.cockroachlabs.cloud:"+connectData.data.port+"/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dbug-game-5059";
+  // Expand $env:appdata environment variable in Windows connection string
+  if (string.includes("env:appdata")) {
+    string = string.replace(
+      "$env:appdata",
+      process.env.APPDATA
+    );
   }
-}
-
-// Init table if doesn't exist
-async function createTableIfDoesntExist(client, callback) {
-  const command = "CREATE TABLE IF NOT EXISTS scores (id UUID PRIMARY KEY, time DEFAULT CURRENT_TIMESTAMP, user varchar(1000), score INT);"
-  await client.query(command, callback);
-}
-
-// Run the transactions in the connection pool
-app.get('/getLeaderboard', (req, res) => {
-
+  // Expand $HOME environment variable in UNIX connection string
+  else if (string.includes("HOME")){
+    string = string.replace(
+      "$HOME",
+      process.env.HOME
+    );
+  }
   
-  async function getScores(client, callback) {
-    const command1 = "CREATE TABLE IF NOT EXISTS scores (id UUID PRIMARY KEY, time CURRENT_TIMESTAMP, user varchar(1000), score INT);"
-    await client.query(command1, callback);
+var config = parse(string);
+  config.port = 26257;
+  config.database = "scores";
 
-    const command = "SELECT user,score FROM scores;"
-    await client.query(command, callback);
-  }
+app.post('/leaderboard', (req, res) => {
+    const currentPlayer = req.query.player;
+    const newScore = req.query.score;
+    const id = new Date().valueOf();
 
-  (async () => {
-
-    // CONNECTION
-    prompt.start();
-    const URI = await prompt.get("connectionString");
-    var connectionString;
-    // Expand $env:appdata environment variable in Windows connection string
-    if (URI.connectionString.includes("env:appdata")) {
-        connectionString = await URI.connectionString.replace(
-            "$env:appdata",
-            process.env.APPDATA
-        );
-    }
-    // Expand $HOME environment variable in UNIX connection string
-    else if (URI.connectionString.includes("HOME")) {
-        connectionString = await URI.connectionString.replace(
-            "$HOME",
-            process.env.HOME
-        );
-    }
-    var config = parse(connectionString);
-    config.port = 26257;
-    config.database = "bank";
-    const pool = new Pool(config);
-    // Connect to database
-    const client = await pool.connect();
-
-    // RUNNING CODE
-    console.log("Get scores...");
-    function cb(err, res) {
-        if (err) throw err;
-
-        if (res.rows.length > 0) {
-          const entries = res.rows;
-          console.log(entries);
-          res.json({});
+    const pool = new pg.Pool(config);
+    pool.connect(function (err, client, done) {
+        // Close the connection to the database and exit
+        const finish = function (callback) {
+                done();
+        };
+        if (err) {
+          console.error('Error connecting to the CockroachDB', err);
+          finish();
         }
-    }
-    await retryTxn(0, 15, client, getScores, cb);
 
-    // Exit program
-    process.exit();
-
-  })().catch((err) => console.log(err.stack));
-
+        // async.waterfall is used to run a multiple task that is dependent to the previous one.
+        
+        let returnData;
+        async.waterfall([
+                function (next) {
+                    // Init table if doesn't exist
+                    console.log('add table')
+                    const command = "CREATE TABLE IF NOT EXISTS leaderboard (id INT PRIMARY KEY, added TIMESTAMP DEFAULT CURRENT_TIMESTAMP, player VARCHAR(1000), score INT)"
+                    client.query(command, next);
+                  
+                },
+                function (results, next) {
+                  console.log('add score')
+                  if (currentPlayer && newScore) {
+                    // Add score
+                    const command = "INSERT INTO leaderboard (id, player, score) VALUES (" + id + ", '" + currentPlayer + "', " + newScore + ")"
+                    client.query(command);
+                  }
+                  next();
+                },
+                function (next) {
+                  const command = "SELECT player,score FROM leaderboard ORDER BY score DESC LIMIT 10;";
+                  
+                  client.query(command, function(err,{rows}){
+                    returnData = {entries: rows};
+                    next();
+                  });
+                },
+            ],
+            function (err) {
+                if (err) {
+                    console.error('Error adding and getting database ', err);
+                    finish();
+                }
+                res.json(returnData);
+                finish();
+        });
+    });
 });
 
-app.post('/addScore', (req, res) => {
-  var user = req.query.user;
-  var score = req.query.score;
-
-  (async () => {
-    // Insert new score
-    // Get user and score from api call
-    async function addScore(client, callback) {
-      const id = await uuidv4();
-      const command = "INSERT INTO scores (id, user, score) VALUES (" + id + ", " + user + ", " + score + ")"
-      await client.query(command, callback);
-    }
-    
-    // CONNECTION
-    prompt.start();
-    const URI = await prompt.get("connectionString");
-    var connectionString;
-    // Expand $env:appdata environment variable in Windows connection string
-    if (URI.connectionString.includes("env:appdata")) {
-        connectionString = await URI.connectionString.replace(
-            "$env:appdata",
-            process.env.APPDATA
-        );
-    }
-    // Expand $HOME environment variable in UNIX connection string
-    else if (URI.connectionString.includes("HOME")) {
-        connectionString = await URI.connectionString.replace(
-            "$HOME",
-            process.env.HOME
-        );
-    }
-    var config = parse(connectionString);
-    config.port = 26257;
-    config.database = "bank";
-    const pool = new Pool(config);
-    // Connect to database
-    const client = await pool.connect();
-
-    // RUNNING CODE
-    console.log("Adding score...");
-    function cb(err, res) {
-        if (err) throw err;
-
-        if (res.rows.length > 0) {
-            console.log(entries);
-            res.json({});
-        }
-    }
-    await retryTxn(0, 15, client, addScore, cb);
-
-    // Exit program
-    process.exit();
-
-  })().catch((err) => console.log(err.stack));
-  
-});
-*/
 // STATIC
 app.use(express.static(client+'/'));
 app.get('/', (req,res) => {

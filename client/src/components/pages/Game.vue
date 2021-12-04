@@ -8,11 +8,20 @@
       data-background="navy"
     >
       <img src="@/assets/bug-logo.svg" class="Logo" />
-      <div class="Controls">
+      <div v-if="!playedBefore" id="Name_Input">
+        <div class="Name_Input_Instructions">What's your name?</div>
+        <input
+          name="playerName"
+          v-model="playerName"
+          placeholder=""
+        />
+      </div>
+      <div class="Controls" v-if="playerReady">
+        
         <div class="Button" data-color="magenta" @click="changePage('game')">
           start
         </div>
-        <div style="hide"
+        <div
           class="Button"
           data-color="purple"
           @click="changePage('leaderboard')"
@@ -49,7 +58,7 @@
       <div class="LeaderBoard_TableBody">
         <table>
           <tr class="LeaderBoard_Table_Entry" v-for="(entry, index) in leaderBoardEntries" :key="index">
-            <td class="LeaderBoard_User">{{ entry.user }}</td><td class="LeaderBoard_Score">{{ entry.score }}</td>
+            <td class="LeaderBoard_Player">{{ entry.player }}</td><td class="LeaderBoard_Score">{{ entry.score }}</td>
           </tr>
         </table>
       </div>
@@ -105,7 +114,7 @@
             go again!
           </div>
 
-          <div v-if="false" 
+          <div v-if="highScore" 
             class="Button"
             data-color="purple"
             @click="changePage('leaderboard')"
@@ -163,6 +172,18 @@ export default {
   name: "Game",
   mixins: [AudioFunctions],
   computed: {
+    playerName: {
+      set(playerName) {
+        this.$store.commit("setPlayer", playerName);
+      },
+      get() {
+        // Or remove mapState and use this.$store.state.values.example
+        return this.$store.state.currentPlayer;
+      }
+    },
+    playerReady() {
+      return this.$store.state.currentPlayer.length > 0 
+    },
     highScore() {
       const gotAHighScore = false;
       return gotAHighScore;
@@ -219,6 +240,7 @@ export default {
   },
   data() {
     return {
+      playedBefore: false,
       currentPage: "dashboard",
       gameInitialization: false,
       gameConfig: {},
@@ -245,7 +267,7 @@ export default {
           _id: 2,
           filename: "2",
           background: "purple",
-          gravity:100
+          gravity:125
         },
 
         {
@@ -260,14 +282,14 @@ export default {
           _id: 4,
           filename: "4",
           background: "black",
-          gravity:100
+          gravity: 200
         },
 
         {
           _id: 5,
           filename: "5",
           background: "steps",
-          gravity:200
+          gravity:750
         },
         /*
         {
@@ -301,8 +323,8 @@ export default {
         },
         {
           name: "comet",
-          width: 42,
-          height: 86 / 2,
+          width: 40,
+          height: 92 / 2,
           points: 500,
           prob: 0.3
         },
@@ -323,7 +345,7 @@ export default {
       ],
       x: window.innerWidth / 2,
       y: window.innerHeight - 50,
-      updateTime: 50,
+      updateTime: 25,
       updateTimer: 0,
     };
   },
@@ -416,9 +438,7 @@ export default {
       componentContext.removeAllObjects();
       componentContext.stopSound(componentContext);
       componentContext.gameStatus = "complete";
-      
-      // Add score
-      // Check high score
+      componentContext.addScore();
     },
     updateScore(points) {
       this.$store.dispatch("updateScore", points);
@@ -494,8 +514,9 @@ export default {
       function lifeCheck() {
         componentContext.lives -= 1;
         if (componentContext.lives < 1) {
-          componentContext.gameStatus = "over";
           componentContext.stopSound(componentContext);
+          componentContext.gameStatus = "over";
+          componentContext.addScore();
         } else {
           componentContext.addShip(gameContext);
         }
@@ -576,6 +597,7 @@ export default {
       const componentContext = this;
 
       // Set level gravity
+      console.log(componentContext.currentLevel.gravity);
       if (componentContext.currentLevel.gravity) {
         componentContext.gameContext.physics.world.gravity.y = componentContext.currentLevel.gravity;
       }
@@ -586,6 +608,14 @@ export default {
     getLeaderBoard() {
       var componentContext = this;
       componentContext.$store.dispatch('getLeaderBoard');
+    },
+    addScore() {
+      var componentContext = this;
+      const data = {
+        player: this.$store.state.currentPlayer,
+        score : componentContext.totalScore
+      };
+      componentContext.$store.dispatch("addScore", data);
     }
   },
   mounted() {
@@ -607,7 +637,7 @@ export default {
           },
         },
         init() {
-          //this.cameras.main.setBackgroundColor('transparent'); // Set background color
+          // Init game
         },
         preload() {
           const context = this;
@@ -631,6 +661,7 @@ export default {
           // Death objects
           componentContext.deathObjects.forEach(function (objectObj, index) {
             const objectName = "death-" + objectObj.name;
+            
             context.load.spritesheet(
               objectName,
               "image/" + objectName + ".svg",
@@ -639,6 +670,7 @@ export default {
                 frameHeight: objectObj.height,
               }
             );
+            
           });
 
           // Good objects
@@ -756,6 +788,7 @@ export default {
           const context = this;
           
           // Store reset function
+          componentContext.playedBefore = true;
           componentContext.destroyGame = {
             func: function () {
               context.sys.game.destroy(true);
@@ -1009,10 +1042,22 @@ export default {
     };
 
     const bottomPadding = 50;
-    document.addEventListener("mousemove", function (evt) {
-      if (componentContext.gameContext) {
-        // Check if game ready
-
+    function shipMovement(evt) {
+      var coords = evt.touches ? {
+        x: evt.touches[0].pageX,
+        y: evt.touches[0].pageY
+      }: 
+      evt.changedTouches ? 
+      {
+        x: evt.changedTouches[0].pageX,
+        y: evt.changedTouches[0].pageY
+      }:
+      {
+        x: evt.clientX,
+        y: evt.clientY
+      };
+      
+     if (componentContext.gameContext) { // Game ready
         // Animation
         const stallTime = 500;
         componentContext.animateShip(componentContext.gameContext, "go"); // Acceleration animation
@@ -1024,14 +1069,14 @@ export default {
         if (componentContext.gameContext.ship && componentContext.shipAlive) {
           const flyConfig = {
             targets: componentContext.gameContext.ship,
-            x: evt.clientX,
+            x: coords.x,
             duration: 250,
             ease: "Sine.easeOut",
           };
 
-          if (componentContext.gameStatus === 'complete' || evt.clientY >= componentContext.gameContext.game.config.height / 2 && evt.clientY <= componentContext.gameContext.game.config.height - bottomPadding
+          if (componentContext.gameStatus === 'complete' || coords.y >= componentContext.gameContext.game.config.height / 2 && coords.y <= componentContext.gameContext.game.config.height - bottomPadding
           ) {
-            flyConfig.y = evt.clientY;
+            flyConfig.y = coords.y;
           }
           componentContext.gameContext.tweens.add(flyConfig, this);
 
@@ -1047,8 +1092,13 @@ export default {
           );
         }
       }
+    };
+    document.addEventListener("touchmove", function (evt) {
+      shipMovement(evt);
     });
-
+    document.addEventListener("mousemove", function (evt) {
+      shipMovement(evt)
+    });
     class Bullet extends Phaser.Physics.Arcade.Sprite {
       constructor(scene, x, y) {
         super(scene, x, y, "bullet");
@@ -1285,7 +1335,7 @@ export default {
     }
 
     // Load leaderboard data
-    // componentContext.getLeaderBoard();
+    componentContext.getLeaderBoard();    
   },
 };
 </script>
@@ -1346,6 +1396,8 @@ export default {
   display: block;
   margin: 0 auto;
   margin-bottom: 40px;
+  width: 100%;
+  max-width: 340px;
 }
 #PhaserGame {
   cursor: crosshair;
@@ -1435,10 +1487,11 @@ export default {
 .Controls {
   display: inline-flex;
   flex-direction: column;
+  align-items: center;
 }
 .Button {
   cursor: pointer;
-  display: table;
+  width: 100%;
   font-family: "Roboto Mono";
   font-size: 20px;
   font-weight: 600;
@@ -1653,10 +1706,30 @@ export default {
   }
   font-size: 20px;
 }
-.LeaderBoard_User {
+.LeaderBoard_Player {
 
 }
 .LeaderBoard_Score {
 
+}
+#Name_Input {
+  color: white;
+  margin-bottom: 10px;
+  .Name_Input_Instructions {
+    color: white;
+    font-size: 22px;
+    margin-bottom: 10px;
+    text-align: left;
+    color: white;
+  }
+  input {
+    background: white;
+    font-size: 32px;
+    padding: 10px;
+    border: none;
+    outline: none;
+    font-family: "Roboto Mono", monospace;
+    color: #1e2235;
+  }
 }
 </style>
