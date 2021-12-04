@@ -5,6 +5,10 @@
   "scripts": {
     "start": "node server/server.js"
   },
+  "engines": {
+    "node": "14.17.0",
+    "npm": "6.14.13"
+  },
   "dependencies": {
     "axios": "^0.24.0",
     "cors": "^2.8.5",
