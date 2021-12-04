@@ -8,9 +8,9 @@ VueX<br>
 Phaser (Game Engine)<br>
 SCSS<br>
 Node<br>
-CockroachDB (For storing game scores and further theme (**BUG**) compliance) and it currently has a. . . bug which will be fixed soon. . imagine that :/
+~~CockroachDB (For storing game scores and further theme (**BUG**) compliance) and it currently has a. . . bug which will be fixed soon. . imagine that :/~~
 
-Another bug is that this does NOT work in Safari browser for now.
+~~Another bug is that this does NOT work in Safari browser for now.~~
 
 Navigate to server folder and run **npm start**
 
