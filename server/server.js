@@ -16,7 +16,7 @@ const { v4: uuidv4 } = require("uuid");
 
 // Connection to the database
 var connectData = require('./connect_data');
-let string = "postgresql://"+connectData.data.user+":"+connectData.data.pass+"@free-tier.gcp-us-central1.cockroachlabs.cloud:"+connectData.data.port+"/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.postgresql/root.crt&options=--cluster%3Dbug-game-5059";
+let string = "postgresql://"+connectData.data.user+":"+connectData.data.pass+"@free-tier.gcp-us-central1.cockroachlabs.cloud:"+connectData.data.port+"/defaultdb?sslmode=verify-full&sslrootcert=$HOME/.certs/root.crt&options=--cluster%3Dbug-game-5059";
   // Expand $env:appdata environment variable in Windows connection string
   if (string.includes("env:appdata")) {
     string = string.replace(
@@ -97,7 +97,7 @@ app.use(express.static(client+'/'));
 app.get('/', (req,res) => {
   res.sendFile(client + "/index.html");
 });
-
+const host = '0.0.0.0';
 const port = process.env.PORT || 5000;
 app.listen(port, function(){
     console.log('Running on '+ port);
