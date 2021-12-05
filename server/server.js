@@ -58,14 +58,13 @@ app.post('/leaderboard', (req, res) => {
         async.waterfall([
                 function (next) {
                     // Init table if doesn't exist
-                    console.log('add table')
                     const command = "CREATE TABLE IF NOT EXISTS leaderboard (id INT PRIMARY KEY, added TIMESTAMP DEFAULT CURRENT_TIMESTAMP, player VARCHAR(1000), score INT)"
                     client.query(command, next);
                   
                 },
                 function (results, next) {
-                  console.log('add score')
                   if (currentPlayer && newScore) {
+                    console.log(currentPlayer + 'played and got a '+ newScore);
                     // Add score
                     const command = "INSERT INTO leaderboard (id, player, score) VALUES (" + id + ", '" + currentPlayer + "', " + newScore + ")"
                     client.query(command);

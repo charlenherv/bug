@@ -1495,7 +1495,7 @@ export default {
   font-family: "Roboto Mono";
   font-size: 20px;
   font-weight: 600;
-  box-shadow: -4px 4px 0px 3px #00b7ff;
+  box-shadow: -5px 6px 0 2px #00b7ff;
   background: blue;
   color: white;
   padding: 12.5px 20px;
@@ -1638,7 +1638,7 @@ export default {
     &[data-color="purple"] {
       background-color: #380762;
     }
-    box-shadow: -4px 4px 0px 3px #fce00a;
+    box-shadow: -5px 6px 0 2px #fce00a;
   }
 }
 
@@ -1681,7 +1681,8 @@ export default {
   font-family: "Roboto Mono";
   background: #1E2235;
   color: white;
-  margin: 20px;
+  width: 650px;
+  margin: 40px auto;
 
 }
 .LeaderBoard_TableHeader {
